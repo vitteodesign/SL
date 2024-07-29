@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Локальне слайд-шоу</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+        }
+        #slideshow-container {
+            width: 80vw;
+            height: 80vh;
+            max-width: 800px;
+            max-height: 600px;
+            position: relative;
+            overflow: hidden;
+            margin-bottom: 20px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+            cursor: pointer;
+        }
+        .slide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            opacity: 0;
+            transition: all 0.5s ease;
+        }
+        #directory-picker {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <input type="file" id="directory-picker" webkitdirectory directory multiple>
+    <div id="slideshow-container"></div>
+
+    <script>
+        const SLIDE_DURATION = 500; // 0.5 секунди
+        let images = [];
+        let currentIndex = 0;
+        let slideshowInterval;
+
+        const directoryPicker = document.getElementById('directory-picker');
+        const slideshowContainer = document.getElementById('slideshow-container');
+
+        directoryPicker.addEventListener('change', handleDirectorySelection);
+        slideshowContainer.addEventListener('click', updateSlideshow);
+
+        function handleDirectorySelection(event) {
+            const files = event.target.files;
+            images = Array.from(files)
+                .filter(file => file.type.startsWith('image/'))
+                .map(file => URL.createObjectURL(file));
+
+            if (images.length > 0) {
+                shuffleArray(images);
+                startSlideshow();
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function createSlide(imageSrc) {
+            const slide = document.createElement('img');
+            slide.src = imageSrc;
+            slide.className = 'slide';
+            return slide;
+        }
+
+        function showSlide(index) {
+            const currentSlide = slideshowContainer.querySelector('.slide:not(.hidden)');
+            if (currentSlide) {
+                currentSlide.style.opacity = 0;
+                setTimeout(() => currentSlide.remove(), 500);
+            }
+
+            const nextImage = images[index];
+            const slide = createSlide(nextImage);
+            slideshowContainer.appendChild(slide);
+            setTimeout(() => {
+                slide.style.opacity = 1;
+            }, 50);
+        }
+
+        function startSlideshow() {
+            if (slideshowInterval) {
+                clearInterval(slideshowInterval);
+            }
+            currentIndex = 0;
+            showSlide(currentIndex);
+            slideshowInterval = setInterval(() => {
+                currentIndex = (currentIndex + 1) % images.length;
+                showSlide(currentIndex);
+            }, SLIDE_DURATION);
+        }
+
+        function updateSlideshow() {
+            shuffleArray(images);
+            startSlideshow();
+        }
+    </script>
+</body>
+</html>
