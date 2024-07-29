@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GitHub Pages Слайд-шоу</title>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+            transition: background-color 0.5s ease;
+        }
+        #slideshow-container {
+            width: 80vw;
+            height: 80vh;
+            max-width: 800px;
+            max-height: 600px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            background-color: #fff;
+        }
+        .slide {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            max-width: 100%;
+            max-height: 100%;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+    </style>
+</head>
+<body>
+    <div id="slideshow-container"></div>
+
+    <script>
+        const GITHUB_REPO = 'https://api.github.com/repos/YOUR_USERNAME/YOUR_REPO/contents/images';
+        const SLIDE_DURATION = 500; // 0.5 секунди
+        let images = [];
+        let currentIndex = 0;
+        let isPlaying = true;
+        let intervalId;
+
+        async function fetchImages() {
+            try {
+                const response = await fetch(GITHUB_REPO);
+                const data = await response.json();
+                return data
+                    .filter(file => file.type === 'file' && /\.(jpg|jpeg|png|gif)$/i.test(file.name))
+                    .map(file => file.download_url);
+            } catch (error) {
+                console.error('Помилка завантаження зображень:', error);
+                return [];
+            }
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+        }
+
+        function createSlide(imageSrc) {
+            const slide = document.createElement('img');
+            slide.src = imageSrc;
+            slide.className = 'slide';
+            return slide;
+        }
+
+        function generateRandomColor() {
+            const hue = Math.floor(Math.random() * 360);
+            return `hsl(${hue}, 50%, 80%)`;
+        }
+
+        function showSlide(index) {
+            const container = document.getElementById('slideshow-container');
+            container.innerHTML = '';  // Видаляємо всі попередні слайди
+
+            const nextImage = images[index];
+            const slide = createSlide(nextImage);
+            container.appendChild(slide);
+
+            // Змінюємо колір фону
+            document.body.style.backgroundColor = generateRandomColor();
+        }
+
+        function playSlideshow() {
+            if (isPlaying) {
+                showSlide(currentIndex);
+                currentIndex = (currentIndex + 1) % images.length;
+            }
+        }
+
+        async function initSlideshow() {
+            images = await fetchImages();
+            if (images.length === 0) return;
+
+            shuffleArray(images);
+            showSlide(currentIndex);
+
+            intervalId = setInterval(playSlideshow, SLIDE_DURATION);
+
+            const container = document.getElementById('slideshow-container');
+            container.addEventListener('pointerdown', () => {
+                isPlaying = false;
+                clearInterval(intervalId);
+            });
+            container.addEventListener('pointerup', () => {
+                isPlaying = true;
+                intervalId = setInterval(playSlideshow, SLIDE_DURATION);
+            });
+            container.addEventListener('pointerout', () => {
+                isPlaying = true;
+                intervalId = setInterval(playSlideshow, SLIDE_DURATION);
+            });
+        }
+
+        initSlideshow();
+    </script>
+</body>
+</html>
